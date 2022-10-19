@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use App\Providers\RouteServiceProvider;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -28,11 +31,18 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request)
     {
-        $request->authenticate();
+        $user = User::where('email', $request->email)->first();
 
-        $request->session()->regenerate();
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        return response()->json([
+            'user' => $user,
+            'token' => $user->createToken($request->device_name)->plainTextToken
+        ]);
     }
 
     /**

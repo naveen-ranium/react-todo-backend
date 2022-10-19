@@ -45,10 +45,9 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        event(new Registered($user));
-
-        Auth::login($user);
-
-        return redirect(RouteServiceProvider::HOME);
+        return response()->json([
+            'user' => $user,
+            'token' => $user->createToken($request->device_name)->plainTextToken
+        ]);
     }
 }
